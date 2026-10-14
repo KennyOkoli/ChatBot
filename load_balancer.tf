@@ -1,0 +1,66 @@
+resource "aws_lb" "sch_app_lb" {
+    name = "schedule-url"
+    subnets = aws_subnet.public_subnets[*].id
+    internal = false 
+    load_balancer_type = "application"
+    security_groups = [aws_security_group.lb_security_group.id]
+}
+
+resource "aws_lb_listener" "sch_lb_listener" {
+    load_balancer_arn = aws_lb.sch_app_lb.arn
+    protocol = "HTTP"
+    port = 80
+    default_action {
+      type = "forward"
+      target_group_arn = aws_lb_target_group.lb_target_group.arn
+    }
+}
+
+resource "aws_lb_target_group" "lb_target_group" {
+    vpc_id = aws_vpc.cloudGPT.id
+    protocol = "HTTP"
+    port = 80
+    target_type = "IP"
+
+    health_check {
+      protocol = "HTTP"
+      path = "/"
+      port = 80
+      interval = 10
+      timeout = 5
+      healthy_threshold = 3
+      unhealthy_threshold = 2
+    }
+}
+
+resource "aws_security_group" "lb_security_group" {
+    vpc_id = aws_vpc.cloudGPT.id
+    name = "lb_security_group"
+}
+
+resource "aws_security_group_rule" "lb_sg_rule" {
+    security_group_id = aws_security_group.lb_security_group.id
+    type = "ingress"
+    protocol = "tcp"
+    cidr_blocks = [var.public_cidr]
+    from_port = 80
+    to_port = 80
+}
+
+resource "aws_security_group_rule" "lb_sg_rule" {
+    security_group_id = aws_security_group.lb_security_group.id
+    type = "ingress"
+    protocol = "tcp"
+    cidr_blocks = [var.public_cidr]
+    from_port = 443
+    to_port = 443
+}
+
+resource "aws_security_group_rule" "lb_sg_rule" {
+    security_group_id = aws_security_group.lb_security_group.id
+    source_security_group_id = aws_security_group.lb_security_group.id
+    type = "engress"
+    protocol = "tcp"
+    from_port = 0
+    to_port = 65535
+}
