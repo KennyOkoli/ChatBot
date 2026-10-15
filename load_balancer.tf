@@ -58,7 +58,7 @@ resource "aws_security_group_rule" "lb_sg_rule_2" {
 
 resource "aws_security_group_rule" "lb_sg_rule_3" {
     security_group_id = aws_security_group.lb_security_group.id
-    source_security_group_id = aws_security_group.ecs_sg.id
+    source_security_group_id = aws_security_group.task_sg.id
     type = "egress"
     protocol = "tcp"
     from_port = 0

@@ -15,3 +15,8 @@ variable "nat_tags" {
 variable "account_id" {
     default = "871145212791"
 }
+
+variable "db-credentials" {
+    type = list(string)
+    default = ["Kenny", "kenny2027"]
+}

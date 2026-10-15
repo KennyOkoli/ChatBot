@@ -34,6 +34,7 @@ resource "aws_ecs_service" "chatbot_ecs" {
     task_definition = aws_ecs_task_definition.chatbot_task_def.arn
     desired_count = 0
     launch_type = "FARGATE"
+    
 
     load_balancer {
       target_group_arn = aws_lb_target_group.lb_target_group.arn
@@ -43,7 +44,7 @@ resource "aws_ecs_service" "chatbot_ecs" {
 
     network_configuration {
       subnets = aws_subnet.private_compute_subnets[*].id
-      security_groups = [aws_security_group.ecs_sg.id]
+      security_groups = [aws_security_group.task_sg.id]
     }
 
     lifecycle {
@@ -51,14 +52,13 @@ resource "aws_ecs_service" "chatbot_ecs" {
   }
 }
 
-
-resource "aws_security_group" "ecs_sg" {
-    name = "ecs_sg"
+resource "aws_security_group" "task_sg" {
+    name = "task_sg"
     vpc_id = aws_vpc.cloudGPT.id
 }
 
-resource "aws_security_group_rule" "ecs_sg_3000" {
-    security_group_id = aws_security_group.ecs_sg.id
+resource "aws_security_group_rule" "task_sg_1" {
+    security_group_id = aws_security_group.task_sg.id
     type = "ingress"
     source_security_group_id = aws_security_group.lb_security_group.id
     protocol = "tcp"
@@ -66,8 +66,8 @@ resource "aws_security_group_rule" "ecs_sg_3000" {
     to_port = 3000
 }
 
-resource "aws_security_group_rule" "ecs_sg__egress_3000" {
-    security_group_id = aws_security_group.ecs_sg.id
+resource "aws_security_group_rule" "task_sg__egress_2" {
+    security_group_id = aws_security_group.task_sg.id
     type = "egress"
     source_security_group_id = aws_security_group.lb_security_group.id
     protocol = "tcp"
@@ -75,16 +75,16 @@ resource "aws_security_group_rule" "ecs_sg__egress_3000" {
     to_port = 65535
 }
 
-#---------------------IAM---------------------
+#-------------------------IAM---------------------
 data "aws_iam_policy_document" "trust_policy_ecr_pull" {
     statement {
       effect = "Allow"
       principals {
         type = "Service"
-        identifiers = ["ecs-amazon.aws.com"]
+        identifiers = ["ecs-amazonaws.com", "ecs-task-amazonaws.com"]
     }
     actions = ["sts:AssumeRole"]
-}
+    }
 }
 
 resource "aws_iam_role" "access_ecr" {
@@ -111,5 +111,26 @@ data "aws_iam_policy_document" "policy_doc" {
         aws_ecr_repository.chatbot_repo.arn,
         "*"
         ]
+    }
+}
+
+resource "aws_iam_role" "task_role" {
+    name = "task_role"
+    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecr_pull.json
+}
+
+resource "aws_iam_role_policy" "task_policy" {
+    name = "task_policy"
+    role = aws_iam_role.task_role.id
+    policy = data.aws_iam_policy_document.task_policy_doc.json
+}
+
+data "aws_iam_policy_document" "task_policy_doc" {
+    statement {
+      effect = "Allow"
+      actions = [
+        "secretsmanager:GetSecretValue"
+      ]
+      resources = [aws_secretsmanager_secret.db-secret.arn]
     }
 }

@@ -11,7 +11,6 @@ data "aws_iam_policy_document" "trust-policy-github" {
         identifiers = [aws_iam_openid_connect_provider.github-id.arn]
         }
       actions = ["sts:AssumeRoleWithWebIdentity"]
-
       condition {
          test     = "StringEquals"
          variable = "token.actions.githubusercontent.com:aud"
