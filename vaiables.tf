@@ -11,3 +11,7 @@ variable "public_cidr" {
 variable "nat_tags" {
     default = ["nat-1", "nat-2"]
 }
+
+variable "account_id" {
+    default = "871145212791"
+}

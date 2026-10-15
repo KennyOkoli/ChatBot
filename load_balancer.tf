@@ -1,13 +1,13 @@
-resource "aws_lb" "sch_app_lb" {
-    name = "schedule-url"
+resource "aws_lb" "chatbot_lb" {
+    name = "chatbot-url"
     subnets = aws_subnet.public_subnets[*].id
     internal = false 
     load_balancer_type = "application"
     security_groups = [aws_security_group.lb_security_group.id]
 }
 
-resource "aws_lb_listener" "sch_lb_listener" {
-    load_balancer_arn = aws_lb.sch_app_lb.arn
+resource "aws_lb_listener" "chatbot_lb_listener" {
+    load_balancer_arn = aws_lb.chatbot_lb.arn
     protocol = "HTTP"
     port = 80
     default_action {
@@ -20,7 +20,7 @@ resource "aws_lb_target_group" "lb_target_group" {
     vpc_id = aws_vpc.cloudGPT.id
     protocol = "HTTP"
     port = 80
-    target_type = "IP"
+    target_type = "ip"
 
     health_check {
       protocol = "HTTP"
@@ -47,7 +47,7 @@ resource "aws_security_group_rule" "lb_sg_rule" {
     to_port = 80
 }
 
-resource "aws_security_group_rule" "lb_sg_rule" {
+resource "aws_security_group_rule" "lb_sg_rule_2" {
     security_group_id = aws_security_group.lb_security_group.id
     type = "ingress"
     protocol = "tcp"
@@ -56,10 +56,10 @@ resource "aws_security_group_rule" "lb_sg_rule" {
     to_port = 443
 }
 
-resource "aws_security_group_rule" "lb_sg_rule" {
+resource "aws_security_group_rule" "lb_sg_rule_3" {
     security_group_id = aws_security_group.lb_security_group.id
-    source_security_group_id = aws_security_group.lb_security_group.id
-    type = "engress"
+    source_security_group_id = aws_security_group.ecs_sg.id
+    type = "egress"
     protocol = "tcp"
     from_port = 0
     to_port = 65535

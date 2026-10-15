@@ -1,21 +1,115 @@
-resource "aws_ecs_cluster" "sch_container_cluster" {
-    name = "schedule-cluster"
+resource "aws_ecs_cluster" "gpt_container_cluster" {
+    name = "Chatbot-cluster"
+}
+
+resource "aws_ecr_repository" "chatbot_repo" {
+    name = "chatbot-repo"
+    image_tag_mutability = "IMMUTABLE"
+}
+
+resource "aws_ecs_task_definition" "chatbot_task_def" {
+    family = "chatbot_main"
+    network_mode = "awsvpc"
+    requires_compatibilities = ["FARGATE"]
+    cpu = 525
+    memory = 2048
+    execution_role_arn = aws_iam_role.access_ecr.arn
+
+    container_definitions = jsonencode([
+        {
+        name = "chatbot"
+        image = "${aws_ecr_repository.chatbot_repo.repository_url}:Latest"
+        essential = true
+        portMappings = [{
+            containerPort = 3000
+           }]
+        }
+        ]
+    )
+}
+
+resource "aws_ecs_service" "chatbot_ecs" {
+    name = "chatbot_ecs"
+    cluster = aws_ecs_cluster.gpt_container_cluster.id
+    task_definition = aws_ecs_task_definition.chatbot_task_def.arn
+    desired_count = 0
+    launch_type = "FARGATE"
+
+    load_balancer {
+      target_group_arn = aws_lb_target_group.lb_target_group.arn
+      container_name = "chatbot"
+      container_port = 3000
+    }
+
+    network_configuration {
+      subnets = aws_subnet.private_compute_subnets[*].id
+      security_groups = [aws_security_group.ecs_sg.id]
+    }
+
+    lifecycle {
+    ignore_changes = [desired_count, task_definition]
+  }
 }
 
 
-/*
-data "aws_iam_policy_document" "trust_policy_task_def" {
+resource "aws_security_group" "ecs_sg" {
+    name = "ecs_sg"
+    vpc_id = aws_vpc.cloudGPT.id
+}
+
+resource "aws_security_group_rule" "ecs_sg_3000" {
+    security_group_id = aws_security_group.ecs_sg.id
+    type = "ingress"
+    source_security_group_id = aws_security_group.lb_security_group.id
+    protocol = "tcp"
+    from_port = 3000
+    to_port = 3000
+}
+
+resource "aws_security_group_rule" "ecs_sg__egress_3000" {
+    security_group_id = aws_security_group.ecs_sg.id
+    type = "egress"
+    source_security_group_id = aws_security_group.lb_security_group.id
+    protocol = "tcp"
+    from_port = 0
+    to_port = 65535
+}
+
+#---------------------IAM---------------------
+data "aws_iam_policy_document" "trust_policy_ecr_pull" {
     statement {
-      effect = "allow"
+      effect = "Allow"
       principals {
         type = "Service"
-        identifiers = [""]
+        identifiers = ["ecs-amazon.aws.com"]
     }
     actions = ["sts:AssumeRole"]
 }
 }
 
 resource "aws_iam_role" "access_ecr" {
-
+    name = "access_ecr"
+    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecr_pull.json
 }
-*/
+
+resource "aws_iam_role_policy" "access_ecr_policy" {
+    name = "access_ecr_policy"
+    role = aws_iam_role.access_ecr.id
+    policy = data.aws_iam_policy_document.policy_doc.json
+}
+
+data "aws_iam_policy_document" "policy_doc" {
+    statement {
+      effect = "Allow"
+      actions = [
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetAuthorizationToken"
+      ]
+      resources = [
+        aws_ecr_repository.chatbot_repo.arn,
+        "*"
+        ]
+    }
+}

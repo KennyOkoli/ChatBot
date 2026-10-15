@@ -17,7 +17,7 @@ resource "aws_subnet" "public_subnets" {
     count = 2
     vpc_id = aws_vpc.cloudGPT.id
     cidr_block = "32.0.${count.index}.0/24"
-    availability_zone = data.aws_availability_zones.af-zones[count.index].names
+    availability_zone = data.aws_availability_zones.af-zones.names[count.index]
     map_public_ip_on_launch = true
     tags ={
         name = var.public_subnets_tags[count.index]
@@ -71,7 +71,6 @@ resource "aws_network_acl_association" "nacls_pub_asociation" {
 }
 
 
-
 # --------------------------- PRIVATE RESOURCES-----------------------------
 variable "prv_subnet_tags" {
     type = list(string)
@@ -81,7 +80,7 @@ variable "prv_subnet_tags" {
 resource "aws_subnet" "private_compute_subnets" {
     count = 2
     vpc_id = aws_vpc.cloudGPT.id
-    availability_zone = data.aws_availability_zones.af-zones[count.index].names
+    availability_zone = data.aws_availability_zones.af-zones.names[count.index]
     cidr_block = "32.0.${count.index + 100}.0/24"
     tags = {
         name = var.prv_subnet_tags[count.index]
@@ -93,7 +92,7 @@ resource "aws_route_table" "prv-route" {
     vpc_id = aws_vpc.cloudGPT.id
     route{
         cidr_block = var.vpc_cidr
-        nat_gateway_id = aws_nat_gateway.vpc_natgateway.id 
+        nat_gateway_id = aws_nat_gateway.vpc_natgateway[count.index].id 
     }
 }
 
@@ -103,17 +102,18 @@ resource "aws_eip" "nat_eip" {
 
 resource "aws_nat_gateway" "vpc_natgateway" {
     count = 2
-    allocation_id = aws_eip.nat_eip
     vpc_id = aws_vpc.cloudGPT.id
-    subnet_id = aws_subnet.public_subnets[*].id
+    allocation_id = aws_eip.nat_eip[count.index].id
+    subnet_id = aws_subnet.public_subnets[count.index].id
     tags = {
-        name = var.nat_tags
+        name = var.nat_tags[count.index]
     }
 }
 
 resource "aws_network_acl" "compute_acl" {
     vpc_id = aws_vpc.cloudGPT.id
     ingress{
+        rule_no = 1
         protocol = "tcp"
         cidr_block = var.vpc_cidr
         action = "allow"
@@ -121,6 +121,7 @@ resource "aws_network_acl" "compute_acl" {
         to_port = 65535
     }
     egress{
+        rule_no = 1
         protocol = "tcp"
         cidr_block = var.vpc_cidr
         action = "allow"
@@ -130,6 +131,14 @@ resource "aws_network_acl" "compute_acl" {
 }
 
 
+resource "aws_route_table_association" "prv-route-subnet" {
+    count = 2
+    route_table_id = aws_route_table.prv-route[count.index].id
+    subnet_id = aws_subnet.private_compute_subnets[count.index].id
+}
 
-
-
+resource "aws_network_acl_association" "nacl-prv-subnet" {
+    count = 2
+    network_acl_id = aws_network_acl.compute_acl.id
+    subnet_id = aws_subnet.private_compute_subnets[count.index].id
+}
