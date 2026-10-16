@@ -2,3 +2,4 @@
 ChatBot/
 .terraform*
 *.yaml
+*.tfstate*

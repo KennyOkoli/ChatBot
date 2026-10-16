@@ -76,7 +76,7 @@ resource "aws_security_group_rule" "task_sg__egress_2" {
 }
 
 #-------------------------IAM---------------------
-data "aws_iam_policy_document" "trust_policy_ecr_pull" {
+data "aws_iam_policy_document" "trust_policy_ecs" {
     statement {
       effect = "Allow"
       principals {
@@ -89,7 +89,7 @@ data "aws_iam_policy_document" "trust_policy_ecr_pull" {
 
 resource "aws_iam_role" "access_ecr" {
     name = "access_ecr"
-    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecr_pull.json
+    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecs.json
 }
 
 resource "aws_iam_role_policy" "access_ecr_policy" {
@@ -114,9 +114,11 @@ data "aws_iam_policy_document" "policy_doc" {
     }
 }
 
-resource "aws_iam_role" "task_role" {
+
+#-----------------------------TASK IAM ROLE-------------------------------
+/*resource "aws_iam_role" "task_role" {
     name = "task_role"
-    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecr_pull.json
+    assume_role_policy = data.aws_iam_policy_document.trust_policy_ecs.json
 }
 
 resource "aws_iam_role_policy" "task_policy" {
@@ -125,6 +127,7 @@ resource "aws_iam_role_policy" "task_policy" {
     policy = data.aws_iam_policy_document.task_policy_doc.json
 }
 
+/*
 data "aws_iam_policy_document" "task_policy_doc" {
     statement {
       effect = "Allow"
@@ -134,3 +137,4 @@ data "aws_iam_policy_document" "task_policy_doc" {
       resources = [aws_secretsmanager_secret.db-secret.arn]
     }
 }
+*/

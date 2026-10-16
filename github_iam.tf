@@ -50,4 +50,20 @@ data "aws_iam_policy_document" "github-permissions" {
         actions = ["ecr:GetAuthorizationToken"]
         resources = ["*"]
     }
+    statement{
+        effect = "Allow"
+        actions = [
+            "ecs:RegisterTaskDefinition",
+            "ecs:DescribeTaskDefinition"
+            ]
+        resources = ["*"] # I set this to all cause the new task def has no arn yet
+    }
+    statement {
+        effect = "Allow"
+        actions = [
+            "ecs:UpdateService",
+            "ecs:DescribeServices"
+        ]
+        resources = [aws_ecs_service.chatbot_ecs.arn]
+    }
 }

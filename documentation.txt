@@ -1,0 +1,14 @@
+LOAD BALANCER:
+My lb is internet facing, it listens on port 80
+It has it's own sg which it uses to initiate egress to the running task's sg
+
+
+EC2:
+My terraform config declares a task def that will be revised by github actions
+Github actions has the permission to describe the task def and then change the default image
+
+
+
+
+AWS OIDC:
+It hives external services, also called Federations, the perimssion to access and modify resources in my AWS account
