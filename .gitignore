@@ -1,2 +1,5 @@
 *.bkp
 ChatBot/
+.terraform
+.terraform.*
+*.tfstate
