@@ -19,15 +19,15 @@ resource "aws_lb_listener" "chatbot_lb_listener" {
 resource "aws_lb_target_group" "lb_target_group" {
     vpc_id = aws_vpc.cloudGPT.id
     protocol = "HTTP"
-    port = 80
+    port = 3000
     target_type = "ip"
 
     health_check {
       protocol = "HTTP"
       path = "/"
-      port = 80
-      interval = 10
-      timeout = 5
+      port = 3000
+      interval = 30
+      timeout = 7
       healthy_threshold = 3
       unhealthy_threshold = 2
     }
@@ -61,6 +61,6 @@ resource "aws_security_group_rule" "lb_sg_rule_3" {
     source_security_group_id = aws_security_group.task_sg.id
     type = "egress"
     protocol = "tcp"
-    from_port = 0
-    to_port = 65535
+    from_port = 3000
+    to_port = 3000
 }

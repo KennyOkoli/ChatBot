@@ -91,7 +91,7 @@ resource "aws_route_table" "prv-route" {
     count = 2
     vpc_id = aws_vpc.cloudGPT.id
     route{
-        cidr_block = var.vpc_cidr
+        cidr_block = var.public_cidr
         nat_gateway_id = aws_nat_gateway.vpc_natgateway[count.index].id 
     }
 }
@@ -102,7 +102,6 @@ resource "aws_eip" "nat_eip" {
 
 resource "aws_nat_gateway" "vpc_natgateway" {
     count = 2
-    vpc_id = aws_vpc.cloudGPT.id
     allocation_id = aws_eip.nat_eip[count.index].id
     subnet_id = aws_subnet.public_subnets[count.index].id
     tags = {
@@ -115,7 +114,7 @@ resource "aws_network_acl" "compute_acl" {
     ingress{
         rule_no = 1
         protocol = "tcp"
-        cidr_block = var.vpc_cidr
+        cidr_block = var.public_cidr
         action = "allow"
         from_port = 0
         to_port = 65535
@@ -123,7 +122,7 @@ resource "aws_network_acl" "compute_acl" {
     egress{
         rule_no = 1
         protocol = "tcp"
-        cidr_block = var.vpc_cidr
+        cidr_block = var.public_cidr
         action = "allow"
         from_port = 0
         to_port = 65535

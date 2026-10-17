@@ -19,7 +19,9 @@ data "aws_iam_policy_document" "trust-policy-github" {
       condition{
          test = "StringLike"
          variable = "token.actions.githubusercontent.com:sub"
-         values = ["repo:KennyOkoli/ChatBot_app:*"]
+         values = [
+            "repo:okoliken@78619495/ChatBot_app@1422665857:*",
+            "repo:okoliken/ChatBot_app:*"]
       }
     }
 }
@@ -49,6 +51,11 @@ data "aws_iam_policy_document" "github-permissions" {
         effect = "Allow"
         actions = ["ecr:GetAuthorizationToken"]
         resources = ["*"]
+    }
+    statement{
+        effect = "Allow"
+        actions = ["iam:PassRole"]
+        resources = [aws_iam_role.access_ecr.arn]
     }
     statement{
         effect = "Allow"

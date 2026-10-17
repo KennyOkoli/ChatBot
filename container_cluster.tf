@@ -11,14 +11,14 @@ resource "aws_ecs_task_definition" "chatbot_task_def" {
     family = "chatbot_main"
     network_mode = "awsvpc"
     requires_compatibilities = ["FARGATE"]
-    cpu = 525
-    memory = 2048
+    cpu = 256
+    memory = 512
     execution_role_arn = aws_iam_role.access_ecr.arn
 
     container_definitions = jsonencode([
         {
         name = "chatbot"
-        image = "${aws_ecr_repository.chatbot_repo.repository_url}:Latest"
+        image = "nginx:latest"
         essential = true
         portMappings = [{
             containerPort = 3000
@@ -29,10 +29,10 @@ resource "aws_ecs_task_definition" "chatbot_task_def" {
 }
 
 resource "aws_ecs_service" "chatbot_ecs" {
-    name = "chatbot_ecs"
+    name = "chatbot-ecs"
     cluster = aws_ecs_cluster.gpt_container_cluster.id
     task_definition = aws_ecs_task_definition.chatbot_task_def.arn
-    desired_count = 0
+    desired_count = 2
     launch_type = "FARGATE"
     
 
@@ -75,13 +75,22 @@ resource "aws_security_group_rule" "task_sg__egress_2" {
     to_port = 65535
 }
 
+resource "aws_security_group_rule" "task_sg__egress_3" {
+    security_group_id = aws_security_group.task_sg.id
+    type = "egress"
+    cidr_blocks = [var.public_cidr]
+    protocol = "tcp"
+    from_port = 0
+    to_port = 65535
+}
+
 #-------------------------IAM---------------------
 data "aws_iam_policy_document" "trust_policy_ecs" {
     statement {
       effect = "Allow"
       principals {
         type = "Service"
-        identifiers = ["ecs-amazonaws.com", "ecs-task-amazonaws.com"]
+        identifiers = ["ecs.amazonaws.com", "ecs-tasks.amazonaws.com"]
     }
     actions = ["sts:AssumeRole"]
     }
@@ -95,10 +104,10 @@ resource "aws_iam_role" "access_ecr" {
 resource "aws_iam_role_policy" "access_ecr_policy" {
     name = "access_ecr_policy"
     role = aws_iam_role.access_ecr.id
-    policy = data.aws_iam_policy_document.policy_doc.json
+    policy = data.aws_iam_policy_document.access_ecr_policy_doc.json
 }
 
-data "aws_iam_policy_document" "policy_doc" {
+data "aws_iam_policy_document" "access_ecr_policy_doc" {
     statement {
       effect = "Allow"
       actions = [
