@@ -1,4 +1,4 @@
-/*resource "aws_db_instance" "chatbot_multi_db" {
+resource "aws_db_instance" "chatbot_multi_db" {
     db_name = "Chatbot"
     identifier = "chatbot-db"
     engine = "mysql"
@@ -81,4 +81,3 @@ resource "aws_route_table_association" "db-route-association" {
 output "db-endpoint"{
     value = aws_db_instance.chatbot_multi_db.endpoint
 }
-*/
